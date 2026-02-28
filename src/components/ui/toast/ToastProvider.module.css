@@ -1,0 +1,29 @@
+.stack {
+  position: fixed;
+  right: 16px;
+  top: calc(var(--header-h) + 12px);
+  display: grid;
+  gap: 10px;
+  z-index: 50;
+}
+
+.toast {
+  width: min(360px, calc(100vw - 32px));
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.info {
+  border-left: 4px solid #3b82f6;
+}
+
+.success {
+  border-left: 4px solid var(--ok);
+}
+
+.error {
+  border-left: 4px solid var(--danger);
+}

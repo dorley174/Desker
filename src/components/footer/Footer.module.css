@@ -1,0 +1,34 @@
+.footer {
+  height: var(--footer-h);
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+
+.inner {
+  height: var(--footer-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dot {
+  color: var(--muted);
+}
+
+.link {
+  color: var(--brand-weak);
+  text-decoration: underline;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
