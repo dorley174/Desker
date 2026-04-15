@@ -15,6 +15,7 @@ type Config struct {
 	DatabaseURL          string
 	JWTSecret            string
 	JWTTTL               time.Duration
+	PasswordResetCodeTTL time.Duration
 	AllowedOrigins       []string
 	MigrationsDir        string
 	RateLimitPerMinute   int
@@ -24,6 +25,11 @@ type Config struct {
 	WriteTimeout         time.Duration
 	IdleTimeout          time.Duration
 	AllowCredentialsCORS bool
+	SMTPHost             string
+	SMTPPort             int
+	SMTPUsername         string
+	SMTPPassword         string
+	SMTPFrom             string
 }
 
 // Load parses config from environment variables and applies sensible defaults.
@@ -42,9 +48,15 @@ func Load() (Config, error) {
 		WriteTimeout:         getenvDuration("WRITE_TIMEOUT", 15*time.Second),
 		IdleTimeout:          getenvDuration("IDLE_TIMEOUT", 60*time.Second),
 		AllowCredentialsCORS: getenvBool("CORS_ALLOW_CREDENTIALS", true),
+		SMTPHost:             strings.TrimSpace(os.Getenv("SMTP_HOST")),
+		SMTPPort:             getenvInt("SMTP_PORT", 587),
+		SMTPUsername:         strings.TrimSpace(os.Getenv("SMTP_USERNAME")),
+		SMTPPassword:         os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:             strings.TrimSpace(os.Getenv("SMTP_FROM")),
 	}
 
 	cfg.JWTTTL = getenvDuration("JWT_TTL", 24*time.Hour)
+	cfg.PasswordResetCodeTTL = getenvDuration("PASSWORD_RESET_CODE_TTL", 15*time.Minute)
 
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")

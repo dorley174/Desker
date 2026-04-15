@@ -21,7 +21,7 @@ func TestUserRepositoryGetByEmailNotFound(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	mock.ExpectQuery(regexp.QuoteMeta(`
-		SELECT id, email, first_name, last_name, avatar_url, role, password_hash, created_at, updated_at
+		SELECT id, email, first_name, last_name, role, password_hash, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`)).WithArgs("missing@desker.io").WillReturnError(sql.ErrNoRows)

@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 const statusLabel: Record<string, string> = {
   completed: "Завершена",
@@ -20,6 +21,7 @@ const statusColor: Record<string, string> = {
 
 const HistoryPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["bookings-history"],
     queryFn: () =>
@@ -30,6 +32,19 @@ const HistoryPage = () => {
         sortOrder: "DESC",
       }),
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: (bookingId: string) => api.cancelBooking(bookingId),
+    onSuccess: () => {
+      toast.success("Бронирование отменено");
+      void queryClient.invalidateQueries({ queryKey: ["bookings-history"] });
+      void queryClient.invalidateQueries({ queryKey: ["seats"] });
+    },
+    onError: (mutationError: Error) => {
+      toast.error(mutationError.message || "Не удалось отменить бронирование");
+    },
+  });
+
   const bookings = data?.items ?? [];
 
   return (
@@ -69,11 +84,23 @@ const HistoryPage = () => {
                 {b.date} · {b.startHour}:00 – {b.endHour}:00
               </p>
             </div>
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor[b.status]}`}
-            >
-              {statusLabel[b.status]}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor[b.status]}`}
+              >
+                {statusLabel[b.status]}
+              </span>
+              {b.status === "active" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={cancelMutation.isPending}
+                  onClick={() => cancelMutation.mutate(b.id)}
+                >
+                  Отменить
+                </Button>
+              ) : null}
+            </div>
           </div>
         ))}
         {bookings.length === 0 && (

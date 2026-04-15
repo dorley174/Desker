@@ -52,7 +52,15 @@ func main() {
 	seatRepo := repositories.NewSeatRepository(db)
 	bookingRepo := repositories.NewBookingRepository(db)
 
-	authService := services.NewAuthService(userRepo, jwt)
+	emailSender := utils.NewSMTPEmailSender(
+		cfg.SMTPHost,
+		cfg.SMTPPort,
+		cfg.SMTPUsername,
+		cfg.SMTPPassword,
+		cfg.SMTPFrom,
+	)
+
+	authService := services.NewAuthService(userRepo, jwt, emailSender, cfg.PasswordResetCodeTTL)
 	userService := services.NewUserService(userRepo)
 	seatService := services.NewSeatService(seatRepo)
 	bookingService := services.NewBookingService(bookingRepo)

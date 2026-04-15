@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
-    avatar_url TEXT,
     role TEXT NOT NULL CHECK (role IN ('admin', 'employee')),
     password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,

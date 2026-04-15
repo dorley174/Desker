@@ -15,9 +15,9 @@ type UserHandler struct {
 }
 
 type updateProfileRequest struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Password  string `json:"password"`
+	FirstName *string `json:"firstName"`
+	LastName  *string `json:"lastName"`
+	Password  *string `json:"password"`
 }
 
 func NewUserHandler(users *services.UserService) *UserHandler {

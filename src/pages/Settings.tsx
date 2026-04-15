@@ -73,11 +73,6 @@ const Settings = () => {
             placeholder="Оставьте пустым, чтобы не менять"
           />
         </div>
-        <div className="space-y-1">
-          <Label>Аватар</Label>
-          {/* TODO: replace with file upload to Supabase Storage */}
-          <Input type="file" accept="image/*" />
-        </div>
 
         {isDirty && (
           <Button onClick={handleSave} className="w-full">

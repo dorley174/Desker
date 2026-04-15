@@ -41,6 +41,7 @@ func NewRouter(deps Dependencies) http.Handler {
 		r.Post("/auth/login", deps.AuthHandler.Login)
 		r.Post("/auth/register", deps.AuthHandler.Register)
 		r.Post("/auth/forgot-password", deps.AuthHandler.ForgotPassword)
+		r.Post("/auth/reset-password", deps.AuthHandler.ResetPassword)
 
 		r.Group(func(r chi.Router) {
 			r.Use(appmw.Auth(deps.JWT))

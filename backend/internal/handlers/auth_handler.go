@@ -35,6 +35,12 @@ type forgotPasswordRequest struct {
 	Email string `json:"email" validate:"required,email"`
 }
 
+type resetPasswordRequest struct {
+	Email       string `json:"email" validate:"required,email"`
+	Code        string `json:"code" validate:"required,len=6,numeric"`
+	NewPassword string `json:"newPassword" validate:"required,min=6"`
+}
+
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -90,9 +96,35 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := h.auth.ForgotPassword(r.Context(), req.Email); err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+
 	// Intentionally generic response to avoid account enumeration.
 	utils.WriteJSON(w, http.StatusOK, map[string]string{
-		"message": "If an account with this email exists, a reset link has been sent.",
+		"message": "If an account with this email exists, a reset code has been sent.",
+	})
+}
+
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req resetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+	if err := utils.ValidateStruct(req); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := h.auth.ResetPassword(r.Context(), req.Email, req.Code, req.NewPassword); err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "Password has been reset successfully.",
 	})
 }
 

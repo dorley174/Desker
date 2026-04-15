@@ -67,6 +67,22 @@ func (f *fakeUserRepo) UpdateProfile(_ context.Context, userID string, firstName
 	return u, nil
 }
 
+func (f *fakeUserRepo) CreatePasswordResetCode(_ context.Context, _ *models.PasswordResetCode) error {
+	return nil
+}
+
+func (f *fakeUserRepo) GetLatestActivePasswordResetCode(_ context.Context, _ string) (*models.PasswordResetCode, error) {
+	return nil, repositories.ErrNotFound
+}
+
+func (f *fakeUserRepo) MarkPasswordResetCodeUsed(_ context.Context, _ string) error {
+	return nil
+}
+
+func (f *fakeUserRepo) UpdatePasswordByUserID(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
 func TestAuthServiceLoginSuccess(t *testing.T) {
 	hash, err := utils.HashPassword("secret123")
 	if err != nil {
@@ -79,7 +95,7 @@ func TestAuthServiceLoginSuccess(t *testing.T) {
 		usersByID:   map[string]*models.User{},
 		inviteRoles: map[string]models.UserRole{},
 	}
-	svc := NewAuthService(repo, utils.NewJWTManager("secret", time.Hour))
+	svc := NewAuthService(repo, utils.NewJWTManager("secret", time.Hour), nil, 15*time.Minute)
 
 	res, err := svc.Login(context.Background(), "user@desker.io", "secret123")
 	if err != nil {
@@ -99,7 +115,7 @@ func TestAuthServiceRegisterInvalidInvite(t *testing.T) {
 		usersByID:    map[string]*models.User{},
 		inviteRoles:  map[string]models.UserRole{"JOIN2026": models.RoleEmployee},
 	}
-	svc := NewAuthService(repo, utils.NewJWTManager("secret", time.Hour))
+	svc := NewAuthService(repo, utils.NewJWTManager("secret", time.Hour), nil, 15*time.Minute)
 
 	_, err := svc.Register(context.Background(), RegisterInput{
 		Email:      "new@desker.io",

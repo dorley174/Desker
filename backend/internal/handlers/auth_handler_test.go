@@ -16,7 +16,7 @@ import (
 
 func TestAuthHandlerLoginValidation(t *testing.T) {
 	repo := &fakeRepoForHandler{}
-	authSvc := services.NewAuthService(repo, utils.NewJWTManager("secret", time.Hour))
+	authSvc := services.NewAuthService(repo, utils.NewJWTManager("secret", time.Hour), nil, 15*time.Minute)
 	h := NewAuthHandler(authSvc)
 
 	body := []byte(`{"email":"bad","password":"123"}`)
@@ -45,4 +45,16 @@ func (f *fakeRepoForHandler) GetRoleByInviteCode(_ context.Context, _ string) (m
 }
 func (f *fakeRepoForHandler) UpdateProfile(_ context.Context, _ string, _ *string, _ *string, _ *string) (*models.User, error) {
 	return nil, repositories.ErrNotFound
+}
+func (f *fakeRepoForHandler) CreatePasswordResetCode(_ context.Context, _ *models.PasswordResetCode) error {
+	return nil
+}
+func (f *fakeRepoForHandler) GetLatestActivePasswordResetCode(_ context.Context, _ string) (*models.PasswordResetCode, error) {
+	return nil, repositories.ErrNotFound
+}
+func (f *fakeRepoForHandler) MarkPasswordResetCodeUsed(_ context.Context, _ string) error {
+	return nil
+}
+func (f *fakeRepoForHandler) UpdatePasswordByUserID(_ context.Context, _ string, _ string) error {
+	return repositories.ErrNotFound
 }

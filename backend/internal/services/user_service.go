@@ -18,21 +18,21 @@ func NewUserService(users repositories.UserRepository) *UserService {
 	return &UserService{users: users}
 }
 
-func (s *UserService) UpdateProfile(ctx context.Context, userID string, firstName, lastName, password string) (*models.User, error) {
+func (s *UserService) UpdateProfile(ctx context.Context, userID string, firstName, lastName, password *string) (*models.User, error) {
 	var firstNamePtr *string
 	var lastNamePtr *string
 	var passwordHashPtr *string
 
-	if strings.TrimSpace(firstName) != "" {
-		trim := strings.TrimSpace(firstName)
+	if firstName != nil && strings.TrimSpace(*firstName) != "" {
+		trim := strings.TrimSpace(*firstName)
 		firstNamePtr = &trim
 	}
-	if strings.TrimSpace(lastName) != "" {
-		trim := strings.TrimSpace(lastName)
+	if lastName != nil && strings.TrimSpace(*lastName) != "" {
+		trim := strings.TrimSpace(*lastName)
 		lastNamePtr = &trim
 	}
-	if strings.TrimSpace(password) != "" {
-		hash, err := utils.HashPassword(password)
+	if password != nil && strings.TrimSpace(*password) != "" {
+		hash, err := utils.HashPassword(*password)
 		if err != nil {
 			return nil, err
 		}

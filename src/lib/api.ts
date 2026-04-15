@@ -94,6 +94,12 @@ export const api = {
       body: JSON.stringify({ email }),
     });
   },
+  async resetPassword(payload: { email: string; code: string; newPassword: string }) {
+    return request<{ message: string }>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
   async me() {
     return request<User>("/auth/me");
   },
