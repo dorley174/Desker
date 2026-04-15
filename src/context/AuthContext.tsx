@@ -1,126 +1,133 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
-
-// TODO: replace with Supabase Auth + user_roles table
-
-export type UserRole = "admin" | "employee";
-
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl?: string;
-  role: UserRole;
-}
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { api, setStoredToken } from "@/lib/api";
+import type { User } from "@/lib/types";
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => boolean;
-  register: (email: string, firstName: string, lastName: string, password: string, inviteCode?: string) => { success: boolean; error?: string };
+  loading: boolean;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    email: string,
+    firstName: string,
+    lastName: string,
+    password: string,
+    inviteCode?: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  updateProfile: (data: Partial<User>) => void;
+  updateProfile: (
+    data: Partial<User> & { password?: string },
+  ) => Promise<{ success: boolean; error?: string }>;
   isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ---------- Mock data ----------
-
-// Test accounts (TODO: replace with Supabase auth)
-const MOCK_ACCOUNTS: Record<string, { password: string; user: User }> = {
-  "admin@desker.io": {
-    password: "admin123",
-    user: {
-      id: "admin-1",
-      email: "admin@desker.io",
-      firstName: "Админ",
-      lastName: "Десков",
-      role: "admin",
-    },
-  },
-  "user@desker.io": {
-    password: "user123",
-    user: {
-      id: "user-1",
-      email: "user@desker.io",
-      firstName: "Иван",
-      lastName: "Петров",
-      role: "employee",
-    },
-  },
-};
-
-// Valid invite codes (TODO: replace with Supabase table lookup)
-const VALID_INVITE_CODES: Record<string, UserRole> = {
-  "ADMIN2026": "admin",
-  "JOIN2026": "employee",
-};
-
 // ---------- Provider ----------
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = (email: string, password: string): boolean => {
-    // TODO: replace with Supabase auth.signInWithPassword
-    const account = MOCK_ACCOUNTS[email.toLowerCase()];
-    if (account && account.password === password) {
-      setUser(account.user);
-      return true;
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const token = localStorage.getItem("desker_token");
+        if (!token) {
+          setUser(null);
+          return;
+        }
+
+        const currentUser = await api.me();
+        setUser(currentUser);
+      } catch {
+        setStoredToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void hydrate();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await api.login(email, password);
+      setStoredToken(response.token);
+      setUser(response.user);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Ошибка входа",
+      };
     }
-    // Fallback: allow any email/password for demo (as employee)
-    setUser({
-      id: "demo-" + Date.now(),
-      email,
-      firstName: "Demo",
-      lastName: "User",
-      role: "employee",
-    });
-    return true;
   };
 
-  const register = (
+  const register = async (
     email: string,
     firstName: string,
     lastName: string,
-    _password: string,
-    inviteCode?: string
-  ): { success: boolean; error?: string } => {
-    // TODO: replace with Supabase auth.signUp + invite code validation
-    let role: UserRole = "employee";
-
-    if (inviteCode && inviteCode.trim() !== "") {
-      const mappedRole = VALID_INVITE_CODES[inviteCode.trim().toUpperCase()];
-      if (!mappedRole) {
-        return { success: false, error: "Неверный инвайт-код" };
-      }
-      role = mappedRole;
+    password: string,
+    inviteCode?: string,
+  ) => {
+    try {
+      const response = await api.register({
+        email,
+        firstName,
+        lastName,
+        password,
+        inviteCode,
+      });
+      setStoredToken(response.token);
+      setUser(response.user);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Ошибка регистрации",
+      };
     }
-
-    setUser({
-      id: "reg-" + Date.now(),
-      email,
-      firstName,
-      lastName,
-      role,
-    });
-    return { success: true };
   };
 
   const logout = () => {
-    // TODO: replace with Supabase auth.signOut
+    setStoredToken(null);
     setUser(null);
   };
 
-  const updateProfile = (data: Partial<User>) => {
-    // TODO: replace with Supabase update
-    if (user) setUser({ ...user, ...data });
+  const updateProfile = async (data: Partial<User> & { password?: string }) => {
+    try {
+      const updated = await api.updateMe({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        password: data.password,
+      });
+      setUser(updated);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Ошибка обновления профиля",
+      };
+    }
   };
 
   const isAdmin = user?.role === "admin";
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, isAdmin }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, logout, updateProfile, isAdmin }}
+    >
       {children}
     </AuthContext.Provider>
   );

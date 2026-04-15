@@ -11,13 +11,19 @@ import { Info } from "lucide-react";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password);
-    navigate("/");
+    setError("");
+    const result = await login(email, password);
+    if (result.success) {
+      navigate("/");
+      return;
+    }
+    setError(result.error || "Ошибка входа");
   };
 
   return (
@@ -30,24 +36,50 @@ const Login = () => {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              <strong>Тестовые аккаунты:</strong><br />
-              Админ: <code>admin@desker.io</code> / <code>admin123</code><br />
+              <strong>Тестовые аккаунты с backend:</strong>
+              <br />
+              Админ: <code>admin@desker.io</code> / <code>admin123</code>
+              <br />
               Сотрудник: <code>user@desker.io</code> / <code>user123</code>
             </AlertDescription>
           </Alert>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="password">Пароль</Label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <Button type="submit" className="w-full">Войти</Button>
+            <Button type="submit" className="w-full">
+              Войти
+            </Button>
             <div className="flex justify-between text-sm text-muted-foreground">
-              <Link to="/forgot-password" className="hover:underline">Забыли пароль?</Link>
-              <Link to="/register" className="hover:underline">Регистрация</Link>
+              <Link to="/forgot-password" className="hover:underline">
+                Забыли пароль?
+              </Link>
+              <Link to="/register" className="hover:underline">
+                Регистрация
+              </Link>
             </div>
           </form>
         </CardContent>

@@ -13,7 +13,7 @@ import { User, Settings, History, LogOut, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -28,7 +28,7 @@ const Header = () => {
           Desker
         </Link>
 
-        {user ? (
+        {loading ? null : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-full border bg-secondary px-3 py-1.5 text-sm font-medium transition hover:bg-accent">
@@ -39,7 +39,14 @@ const Header = () => {
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden sm:inline">{user.firstName}</span>
-                {user.role === "admin" && <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 hidden sm:inline-flex">Admin</Badge>}
+                {user.role === "admin" && (
+                  <Badge
+                    variant="outline"
+                    className="ml-1 text-[10px] px-1 py-0 hidden sm:inline-flex"
+                  >
+                    Admin
+                  </Badge>
+                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -53,7 +60,10 @@ const Header = () => {
                 <History className="mr-2 h-4 w-4" /> История
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive"
+              >
                 <LogOut className="mr-2 h-4 w-4" /> Выйти
               </DropdownMenuItem>
             </DropdownMenuContent>

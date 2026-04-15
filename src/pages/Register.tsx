@@ -20,12 +20,21 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const result = register(email, firstName, lastName, password, inviteCode);
+    const result = await register(
+      email,
+      firstName,
+      lastName,
+      password,
+      inviteCode,
+    );
     if (result.success) {
-      toast({ title: "Регистрация успешна", description: "Добро пожаловать в Desker!" });
+      toast({
+        title: "Регистрация успешна",
+        description: "Добро пожаловать в Desker!",
+      });
       navigate("/");
     } else {
       setError(result.error || "Ошибка регистрации");
@@ -42,8 +51,10 @@ const Register = () => {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              <strong>Инвайт-коды:</strong><br />
-              Админ: <code>ADMIN2026</code><br />
+              <strong>Инвайт-коды:</strong>
+              <br />
+              Админ: <code>ADMIN2026</code>
+              <br />
               Сотрудник: <code>JOIN2026</code> (или оставьте пустым)
             </AlertDescription>
           </Alert>
@@ -58,28 +69,62 @@ const Register = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="firstName">Имя</Label>
-                <Input id="firstName" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                <Input
+                  id="firstName"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="lastName">Фамилия</Label>
-                <Input id="lastName" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                <Input
+                  id="lastName"
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
               </div>
             </div>
             <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="password">Пароль</Label>
-              <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="invite">Инвайт-код (необязательно)</Label>
-              <Input id="invite" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} placeholder="ADMIN2026 или JOIN2026" />
+              <Input
+                id="invite"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                placeholder="ADMIN2026 или JOIN2026"
+              />
             </div>
-            <Button type="submit" className="w-full">Зарегистрироваться</Button>
+            <Button type="submit" className="w-full">
+              Зарегистрироваться
+            </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Уже есть аккаунт? <Link to="/login" className="hover:underline text-primary">Войти</Link>
+              Уже есть аккаунт?{" "}
+              <Link to="/login" className="hover:underline text-primary">
+                Войти
+              </Link>
             </p>
           </form>
         </CardContent>

@@ -4,15 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api } from "@/lib/api";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: replace with API call
-    setSent(true);
+    setError("");
+    try {
+      await api.forgotPassword(email);
+      setSent(true);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Не удалось отправить запрос",
+      );
+    }
   };
 
   return (
@@ -24,19 +33,31 @@ const ForgotPassword = () => {
         <CardContent>
           {sent ? (
             <p className="text-center text-muted-foreground">
-              Если аккаунт с таким email существует, мы отправили ссылку для сброса пароля.
+              Если аккаунт с таким email существует, мы отправили ссылку для
+              сброса пароля.
             </p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="space-y-1">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
-              <Button type="submit" className="w-full">Отправить ссылку</Button>
+              <Button type="submit" className="w-full">
+                Отправить ссылку
+              </Button>
             </form>
           )}
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link to="/login" className="hover:underline text-primary">Вернуться к входу</Link>
+            <Link to="/login" className="hover:underline text-primary">
+              Вернуться к входу
+            </Link>
           </p>
         </CardContent>
       </Card>
