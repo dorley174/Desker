@@ -1,144 +1,47 @@
-import { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
-import { bookingApi } from '@/api/bookingApi';
-import { useAuth } from '@/features/auth/AuthProvider';
-import type { Reservation, Resource } from '@/domain/types';
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { describeBookingStatus, statusPill } from "@/lib/booking-helpers";
+import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return format(d, 'd MMM yyyy', { locale: ru });
-}
+const HistoryPage = () => {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed" | "cancelled" | "no-show">("all");
 
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  return format(d, 'HH:mm');
-}
+  const historyQuery = useQuery({
+    queryKey: ["bookings-history", statusFilter],
+    queryFn: () => api.history({ page: 1, pageSize: 100, status: statusFilter === "all" ? undefined : statusFilter, sortBy: "booking_date", sortOrder: "DESC" }),
+  });
 
-function statusLabel(status: Reservation['status']) {
-  switch (status) {
-    case 'CONFIRMED':
-      return 'Забронировано';
-    case 'CHECKED_IN':
-      return 'Занято (check-in)';
-    case 'CANCELLED':
-      return 'Отменено';
-    case 'COMPLETED':
-      return 'Завершено';
-    case 'NO_SHOW':
-      return 'No-show';
-    default:
-      return status;
-  }
-}
+  const cancelMutation = useMutation({
+    mutationFn: (bookingId: string) => api.cancelBooking(bookingId),
+    onSuccess: () => {
+      toast.success("Бронирование отменено");
+      void queryClient.invalidateQueries({ queryKey: ["bookings-history"] });
+      void queryClient.invalidateQueries({ queryKey: ["seats"] });
+      void queryClient.invalidateQueries({ queryKey: ["seat-slots"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Не удалось отменить бронирование");
+    },
+  });
 
-export function HistoryPage() {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [resourcesById, setResourcesById] = useState<Map<string, Resource>>(new Map());
+  const bookings = useMemo(() => historyQuery.data?.items ?? [], [historyQuery.data]);
 
-  useEffect(() => {
-    let alive = true;
-
-    async function load() {
-      if (!user) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const [floors, myReservations] = await Promise.all([
-          bookingApi.listFloors(),
-          bookingApi.listUserReservations(user.id),
-        ]);
-
-        const resources = (
-          await Promise.all(floors.map((f) => bookingApi.listResources({ floorNumber: f })))
-        ).flat();
-
-        const map = new Map<string, Resource>();
-        for (const r of resources) map.set(r.id, r);
-
-        if (!alive) return;
-        setResourcesById(map);
-        setReservations(myReservations);
-      } catch (err: any) {
-        if (!alive) return;
-        setError(err?.message ?? 'Не удалось загрузить историю');
-      } finally {
-        if (alive) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      alive = false;
-    };
-  }, [user]);
-
-  const rows = useMemo(() => {
-    return [...reservations]
-      .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
-      .map((r) => {
-        const resource = resourcesById.get(r.resourceId);
-        return {
-          reservation: r,
-          resource,
-          date: formatDate(r.startAt),
-          time: `${formatTime(r.startAt)}–${formatTime(r.endAt)}`,
-          status: statusLabel(r.status),
-        };
-      });
-  }, [reservations, resourcesById]);
-
-  if (loading) {
-    return <div className="card" style={{ padding: 16 }}>Загрузка…</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="card" style={{ padding: 16, borderColor: 'var(--danger)' }}>
-        <span style={{ color: 'var(--danger)' }}>{error}</span>
-      </div>
-    );
-  }
+  const summary = useMemo(() => bookings.reduce((acc, booking) => { acc.total += 1; acc[booking.status] += 1; return acc; }, { total: 0, active: 0, completed: 0, cancelled: 0, "no-show": 0 }), [bookings]);
 
   return (
-    <div className="card" style={{ padding: 18 }}>
-      <h1 style={{ margin: 0 }}>История</h1>
-      <p className="muted" style={{ marginTop: 6 }}>
-        Предыдущие брони
-      </p>
-
-      <hr />
-
-      {rows.length === 0 ? (
-        <p className="muted" style={{ margin: 0 }}>Пока нет бронирований.</p>
-      ) : (
-        <div style={{ display: 'grid', gap: 10 }}>
-          {rows.map(({ reservation, resource, date, time, status }) => (
-            <div key={reservation.id} className="card" style={{ padding: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ display: 'grid', gap: 4 }}>
-                  <div style={{ fontWeight: 700 }}>
-                    {resource ? (
-                      <>Место {resource.code} — этаж {resource.floorNumber}, зона {resource.zoneName}</>
-                    ) : (
-                      <>Место (удалено) — id {reservation.resourceId}</>
-                    )}
-                  </div>
-                  <div className="muted">{date} • {time}</div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="badge">{status}</span>
-                  <span className="badge">{reservation.source}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mb-6"><h1 className="text-3xl font-bold tracking-tight">Мои бронирования</h1><p className="mt-2 text-muted-foreground">Список активных и завершённых броней. Отсюда можно быстро отменить будущий резерв и проверить историю посещений.</p></div>
+      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5"><Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">Всего</div><div className="mt-2 text-2xl font-bold">{summary.total}</div></CardContent></Card><Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">Активные</div><div className="mt-2 text-2xl font-bold text-sky-600">{summary.active}</div></CardContent></Card><Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">Завершённые</div><div className="mt-2 text-2xl font-bold text-emerald-600">{summary.completed}</div></CardContent></Card><Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">Отменённые</div><div className="mt-2 text-2xl font-bold text-rose-600">{summary.cancelled}</div></CardContent></Card><Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">No-show</div><div className="mt-2 text-2xl font-bold text-amber-600">{summary["no-show"]}</div></CardContent></Card></div>
+      <Card><CardHeader><CardTitle>Лента бронирований</CardTitle><CardDescription>Фильтрация по статусу и быстрые действия по активным бронированиям</CardDescription></CardHeader><CardContent className="space-y-4"><Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}><TabsList className="grid w-full grid-cols-5"><TabsTrigger value="all">Все</TabsTrigger><TabsTrigger value="active">Активные</TabsTrigger><TabsTrigger value="completed">Завершённые</TabsTrigger><TabsTrigger value="cancelled">Отменённые</TabsTrigger><TabsTrigger value="no-show">No-show</TabsTrigger></TabsList></Tabs>{historyQuery.error ? <Alert variant="destructive"><AlertDescription>{historyQuery.error instanceof Error ? historyQuery.error.message : "Не удалось загрузить историю"}</AlertDescription></Alert> : null}{historyQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка истории...</div> : bookings.length === 0 ? <div className="rounded-2xl border border-dashed p-10 text-center text-muted-foreground">Для выбранного статуса бронирований пока нет.</div> : <div className="space-y-3">{bookings.map((booking) => (<div key={booking.id} className="rounded-2xl border p-4 shadow-sm"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><div className="font-semibold">Этаж {booking.floor} · Место {booking.seatNumber} · Зона {booking.zone}</div><div className="mt-1 text-sm text-muted-foreground">{booking.date} · {booking.startHour}:00–{booking.endHour}:00</div></div><div className="flex flex-wrap items-center gap-2"><span className={cn("rounded-full border px-3 py-1 text-xs", statusPill(booking.status))}>{describeBookingStatus(booking.status)}</span>{booking.status === "active" ? <Button variant="outline" size="sm" disabled={cancelMutation.isPending} onClick={() => cancelMutation.mutate(booking.id)}>Отменить</Button> : null}</div></div></div>))}</div>}</CardContent></Card>
     </div>
   );
-}
+};
+
+export default HistoryPage;

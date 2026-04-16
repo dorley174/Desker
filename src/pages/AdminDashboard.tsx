@@ -1,0 +1,129 @@
+import { useMemo, useState } from "react";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { formatDateKey } from "@/lib/booking-helpers";
+import { implementedCapabilities, productBacklog } from "@/lib/spec-coverage";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertTriangle, CalendarIcon, CheckCircle2, LayoutDashboard, ShieldCheck } from "lucide-react";
+
+const AdminDashboard = () => {
+  const [date, setDate] = useState(new Date());
+  const dateString = formatDateKey(date);
+
+  const floorMetricsQuery = useQuery({
+    queryKey: ["admin-floor-metrics", dateString],
+    queryFn: async () => {
+      const floors = await api.floors();
+      return Promise.all(
+        floors.map(async (floor) => ({
+          floor,
+          seats: await api.seats({ floor, date: dateString, status: "all" }),
+        })),
+      );
+    },
+  });
+
+  const metrics = useMemo(() => {
+    const floors = floorMetricsQuery.data ?? [];
+    const allSeats = floors.flatMap((entry) => entry.seats);
+    const total = allSeats.length;
+    const free = allSeats.filter((seat) => seat.status === "free").length;
+    const occupied = allSeats.filter((seat) => seat.status === "occupied").length;
+    const mine = allSeats.filter((seat) => seat.status === "mine").length;
+    const unavailable = allSeats.filter((seat) => seat.status === "unavailable").length;
+    const tagCoverage = new Map<string, number>();
+
+    allSeats.forEach((seat) => {
+      seat.tags.forEach((tag) => {
+        tagCoverage.set(tag, (tagCoverage.get(tag) ?? 0) + 1);
+      });
+    });
+
+    return {
+      total,
+      free,
+      occupied,
+      mine,
+      unavailable,
+      floorRows: floors.map((entry) => {
+        const floorTotal = entry.seats.length;
+        const floorOccupied = entry.seats.filter((seat) => seat.status === "occupied" || seat.status === "mine").length;
+        const occupancyPercent = floorTotal > 0 ? Math.round((floorOccupied / floorTotal) * 100) : 0;
+        return {
+          floor: entry.floor,
+          total: floorTotal,
+          free: entry.seats.filter((seat) => seat.status === "free").length,
+          occupied: floorOccupied,
+          unavailable: entry.seats.filter((seat) => seat.status === "unavailable").length,
+          occupancyPercent,
+        };
+      }),
+      topTags: [...tagCoverage.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6),
+    };
+  }, [floorMetricsQuery.data]);
+
+  const readinessPercent = Math.round((implementedCapabilities.length / (implementedCapabilities.length + productBacklog.length)) * 100);
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-sm text-primary"><LayoutDashboard className="h-4 w-4" /> Operational dashboard</div>
+          <h1 className="text-3xl font-bold tracking-tight">Админ-панель</h1>
+          <p className="mt-2 max-w-3xl text-muted-foreground">Панель показывает загрузку этажей и покрытие сценариев в автономном демо-режиме. Все метрики считаются из встроенных mock-данных и локальных бронирований пользователя.</p>
+        </div>
+        <Popover>
+          <PopoverTrigger asChild><Button variant="outline" className="justify-start text-left font-normal"><CalendarIcon className="mr-2 h-4 w-4" />{format(date, "PPP", { locale: ru })}</Button></PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end"><Calendar mode="single" selected={date} onSelect={(value) => value && setDate(value)} className="p-3" /></PopoverContent>
+        </Popover>
+      </div>
+
+      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Card><CardContent className="p-5"><div className="text-sm text-muted-foreground">Всего мест</div><div className="mt-2 text-3xl font-bold">{metrics.total}</div></CardContent></Card>
+        <Card><CardContent className="p-5"><div className="text-sm text-muted-foreground">Свободно</div><div className="mt-2 text-3xl font-bold text-emerald-600">{metrics.free}</div></CardContent></Card>
+        <Card><CardContent className="p-5"><div className="text-sm text-muted-foreground">Занято</div><div className="mt-2 text-3xl font-bold text-amber-600">{metrics.occupied + metrics.mine}</div></CardContent></Card>
+        <Card><CardContent className="p-5"><div className="text-sm text-muted-foreground">Покрытие сценариев</div><div className="mt-2 text-3xl font-bold text-primary">{readinessPercent}%</div></CardContent></Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <Card>
+          <CardHeader><CardTitle>Загрузка по этажам</CardTitle><CardDescription>{floorMetricsQuery.isLoading ? "Собираем аналитику..." : "Сводка по текущей доступности мест на выбранную дату"}</CardDescription></CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader><TableRow><TableHead>Этаж</TableHead><TableHead>Всего</TableHead><TableHead>Свободно</TableHead><TableHead>Занято</TableHead><TableHead>Недоступно</TableHead><TableHead>Загрузка</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {metrics.floorRows.map((row) => (
+                  <TableRow key={row.floor}><TableCell className="font-medium">{row.floor}</TableCell><TableCell>{row.total}</TableCell><TableCell>{row.free}</TableCell><TableCell>{row.occupied}</TableCell><TableCell>{row.unavailable}</TableCell><TableCell className="w-[220px]"><div className="flex items-center gap-3"><Progress value={row.occupancyPercent} className="h-2" /><span className="text-xs text-muted-foreground">{row.occupancyPercent}%</span></div></TableCell></TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Популярное оснащение</CardTitle><CardDescription>Наиболее часто встречающиеся теги среди мест</CardDescription></CardHeader>
+          <CardContent className="space-y-3">
+            {metrics.topTags.map(([tag, count]) => (<div key={tag} className="flex items-center justify-between rounded-xl border p-3"><span className="text-sm font-medium">{tag}</span><Badge variant="secondary">{count}</Badge></div>))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <Card><CardHeader><CardTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-600" /> Реализовано во фронтенде</CardTitle></CardHeader><CardContent className="space-y-3">{implementedCapabilities.map((item) => (<div key={item} className="rounded-xl border bg-emerald-50/60 p-3 text-sm text-emerald-900">{item}</div>))}</CardContent></Card>
+        <Card><CardHeader><CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-600" /> Что ещё можно развивать</CardTitle></CardHeader><CardContent className="space-y-3">{productBacklog.map((item) => (<div key={item} className="rounded-xl border bg-amber-50/60 p-3 text-sm text-amber-950">{item}</div>))}</CardContent></Card>
+      </div>
+
+      <Card className="mt-6 border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> Комментарий по архитектуре</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">Админ-панель работает полностью автономно: fetch к внешнему backend больше не нужен, а состояние приложения живёт во встроенном mock-слое. Это удобно для демонстраций, UX-проработки и handoff фронтенда без поднятия сервера.</CardContent></Card>
+    </div>
+  );
+};
+
+export default AdminDashboard;
