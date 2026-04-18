@@ -4,7 +4,6 @@ import { ru } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatDateKey } from "@/lib/booking-helpers";
-import { implementedCapabilities, productBacklog } from "@/lib/spec-coverage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CalendarIcon, CheckCircle2, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { CalendarIcon, LayoutDashboard } from "lucide-react";
 
 const AdminDashboard = () => {
   const [date, setDate] = useState(new Date());
@@ -70,8 +69,6 @@ const AdminDashboard = () => {
     };
   }, [floorMetricsQuery.data]);
 
-  const readinessPercent = Math.round((implementedCapabilities.length / (implementedCapabilities.length + productBacklog.length)) * 100);
-
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -90,7 +87,12 @@ const AdminDashboard = () => {
         <Card><CardContent className="p-5"><div className="text-sm text-muted-foreground">Всего мест</div><div className="mt-2 text-3xl font-bold">{metrics.total}</div></CardContent></Card>
         <Card><CardContent className="p-5"><div className="text-sm text-muted-foreground">Свободно</div><div className="mt-2 text-3xl font-bold text-emerald-600">{metrics.free}</div></CardContent></Card>
         <Card><CardContent className="p-5"><div className="text-sm text-muted-foreground">Занято</div><div className="mt-2 text-3xl font-bold text-amber-600">{metrics.occupied + metrics.mine}</div></CardContent></Card>
-        <Card><CardContent className="p-5"><div className="text-sm text-muted-foreground">Покрытие сценариев</div><div className="mt-2 text-3xl font-bold text-primary">{readinessPercent}%</div></CardContent></Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="text-sm text-muted-foreground">Недоступно</div>
+            <div className="mt-2 text-3xl font-bold text-slate-500">{metrics.unavailable}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
@@ -115,13 +117,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
-      <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <Card><CardHeader><CardTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-600" /> Реализовано во фронтенде</CardTitle></CardHeader><CardContent className="space-y-3">{implementedCapabilities.map((item) => (<div key={item} className="rounded-xl border bg-emerald-50/60 p-3 text-sm text-emerald-900">{item}</div>))}</CardContent></Card>
-        <Card><CardHeader><CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-600" /> Что ещё можно развивать</CardTitle></CardHeader><CardContent className="space-y-3">{productBacklog.map((item) => (<div key={item} className="rounded-xl border bg-amber-50/60 p-3 text-sm text-amber-950">{item}</div>))}</CardContent></Card>
-      </div>
-
-      <Card className="mt-6 border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> Комментарий по архитектуре</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">Админ-панель работает полностью автономно: fetch к внешнему backend больше не нужен, а состояние приложения живёт во встроенном mock-слое. Это удобно для демонстраций, UX-проработки и handoff фронтенда без поднятия сервера.</CardContent></Card>
     </div>
   );
 };
