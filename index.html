@@ -23,6 +23,20 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var path = params.get("p");
+        var query = params.get("q");
+
+        if (!path) return;
+
+        var base = window.location.pathname.replace(/\/$/, "");
+        var newUrl = base + path + (query ? "?" + query : "") + window.location.hash;
+
+        window.history.replaceState(null, "", newUrl);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
