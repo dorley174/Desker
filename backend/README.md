@@ -138,6 +138,7 @@ Then restart the backend with the updated environment variables.
 ## Health
 
 - `GET /healthz`
+- `GET /metrics` (Prometheus scrape endpoint)
 
 ## Auth Endpoints
 
@@ -238,8 +239,65 @@ These contracts are backend-compatible with current frontend interfaces:
 - Per-IP rate limiting
 - Panic recovery middleware
 - Request logging (`slog`)
+- Prometheus metrics (`/metrics`)
 - Graceful shutdown with timeout
 - Startup migrations
+
+## Observability (Prometheus + Grafana)
+
+### Metrics Exposed by the API
+
+The backend exports runtime and app-level metrics such as:
+
+- `desker_http_requests_total` (labels: `method`, `route`, `status`)
+- `desker_http_request_duration_seconds`
+- `desker_http_response_size_bytes`
+- `desker_http_requests_in_flight`
+- `desker_http_panics_recovered_total`
+- `desker_rate_limit_exceeded_total`
+- `desker_rate_limit_visitors_active`
+- `desker_bookings_total` (labels: `operation`, `result`)
+- `desker_db_open_connections`, `desker_db_in_use_connections`, `desker_db_idle_connections`
+- `go_goroutines` and other Go runtime metrics from the standard Go collector
+
+### Run Monitoring Stack (Docker)
+
+From `backend/`:
+
+```bash
+docker compose -f monitoring/docker-compose.yml up -d
+```
+
+Access:
+
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3001` (default `admin` / `admin`)
+
+### Prometheus Scrape Configuration
+
+Default config file:
+
+`monitoring/prometheus/prometheus.yml`
+
+It scrapes `http://host.docker.internal:8080/metrics`. If your API runs in a different location, update `targets` accordingly.
+
+### Grafana Dashboard
+
+A prebuilt dashboard is included at:
+
+`monitoring/grafana/dashboards/desker-observability.json`
+
+Grafana provisioning is already configured in:
+
+- `monitoring/grafana/provisioning/datasources/prometheus.yml`
+- `monitoring/grafana/provisioning/dashboards/dashboards.yml`
+
+After starting Grafana, open the **Desker / Desker API Observability** dashboard.
+
+### Security Notes
+
+- `/metrics` currently has no auth. Restrict network access in production (private subnet, reverse proxy allowlist, or mTLS).
+- Avoid exposing Prometheus/Grafana publicly without authentication and TLS.
 
 ## Database Migration
 

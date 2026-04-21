@@ -9,6 +9,7 @@ import (
 
 	"github.com/nov-o/desker/backend/internal/handlers"
 	appmw "github.com/nov-o/desker/backend/internal/middleware"
+	"github.com/nov-o/desker/backend/internal/observability"
 	"github.com/nov-o/desker/backend/internal/utils"
 )
 
@@ -24,18 +25,23 @@ type Dependencies struct {
 	SeatHandler          *handlers.SeatHandler
 	BookingHandler       *handlers.BookingHandler
 	Logger               *slog.Logger
+	Metrics              *observability.Metrics
+	MetricsHandler       http.Handler
 }
 
 func NewRouter(deps Dependencies) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	r.Use(appmw.Recover(deps.Logger))
-	r.Use(appmw.Logging(deps.Logger))
+	r.Use(appmw.Recover(deps.Logger, deps.Metrics))
+	r.Use(appmw.Logging(deps.Logger, deps.Metrics))
 	r.Use(appmw.SecurityHeaders)
-	r.Use(appmw.RateLimit(deps.RateLimitPerMinute, deps.RateLimitBurst))
+	r.Use(appmw.RateLimit(deps.RateLimitPerMinute, deps.RateLimitBurst, deps.Metrics))
 	r.Use(appmw.CORS(deps.AllowedOrigins, deps.AllowCredentialsCORS))
 
 	r.Get("/healthz", deps.HealthHandler.Liveness)
+	if deps.MetricsHandler != nil {
+		r.Handle("/metrics", deps.MetricsHandler)
+	}
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/auth/login", deps.AuthHandler.Login)

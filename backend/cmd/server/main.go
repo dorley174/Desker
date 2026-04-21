@@ -10,9 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/nov-o/desker/backend/internal/config"
 	"github.com/nov-o/desker/backend/internal/database"
 	"github.com/nov-o/desker/backend/internal/handlers"
+	"github.com/nov-o/desker/backend/internal/observability"
 	"github.com/nov-o/desker/backend/internal/repositories"
 	"github.com/nov-o/desker/backend/internal/routes"
 	"github.com/nov-o/desker/backend/internal/services"
@@ -35,6 +39,10 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	metricsRegistry := prometheus.NewRegistry()
+	metrics := observability.New(metricsRegistry)
+	metrics.RegisterDBStats(db.DB)
 
 	if err := database.RunMigrations(ctx, db, cfg.MigrationsDir); err != nil {
 		logger.Error("failed to run migrations", "error", err)
@@ -69,7 +77,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
 	seatHandler := handlers.NewSeatHandler(seatService)
-	bookingHandler := handlers.NewBookingHandler(bookingService)
+	bookingHandler := handlers.NewBookingHandler(bookingService, metrics)
 
 	router := routes.NewRouter(routes.Dependencies{
 		JWT:                  jwt,
@@ -83,6 +91,8 @@ func main() {
 		SeatHandler:          seatHandler,
 		BookingHandler:       bookingHandler,
 		Logger:               logger,
+		Metrics:              metrics,
+		MetricsHandler:       promhttp.HandlerFor(metricsRegistry, promhttp.HandlerOpts{}),
 	})
 
 	srv := &http.Server{
