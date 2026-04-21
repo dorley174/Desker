@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Desker</title>
+    <script>
+      (function () {
+        var l = window.location;
+        var pathSegments = l.pathname.split("/").filter(Boolean);
+        var repo = pathSegments.length > 0 ? pathSegments[0] : "";
+        var rest = pathSegments.slice(1).join("/");
+
+        var target =
+          l.protocol +
+          "//" +
+          l.host +
+          "/" +
+          repo +
+          "/?p=/" +
+          rest +
+          (l.search ? "&q=" + encodeURIComponent(l.search.slice(1)) : "") +
+          l.hash;
+
+        l.replace(target);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

@@ -1,0 +1,52 @@
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: registry.example.com/team-6/desker-backend
+  pullPolicy: IfNotPresent
+  tag: latest
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+app:
+  port: "8080"
+  env: production
+  databaseDriver: sqlite
+  databaseUrl: /app/data/desker.db
+  migrationsDir: /app/migrations
+  allowedOrigins: https://your-frontend-domain.example
+  corsAllowCredentials: "true"
+  rateLimitPerMinute: "240"
+  rateLimitBurst: "120"
+  readTimeout: 10s
+  writeTimeout: 15s
+  idleTimeout: 60s
+  shutdownTimeout: 15s
+  jwtSecret: replace-me
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /app/data
+
+ingress:
+  enabled: true
+  className: public
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+  path: /team-6-api/(.*)
+  pathType: ImplementationSpecific
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"

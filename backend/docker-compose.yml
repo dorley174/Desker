@@ -1,0 +1,20 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: desker-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_DRIVER: sqlite
+      DATABASE_URL: /app/data/desker.db
+      MIGRATIONS_DIR: /app/migrations
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+    volumes:
+      - desker_sqlite_data:/app/data
+
+volumes:
+  desker_sqlite_data:

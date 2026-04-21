@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desker-backend-config
+  namespace: team-6-ns
+data:
+  APP_ENV: production
+  PORT: "8080"
+  DATABASE_DRIVER: sqlite
+  DATABASE_URL: /app/data/desker.db
+  MIGRATIONS_DIR: /app/migrations
+  ALLOWED_ORIGINS: https://your-frontend-domain.example
+  CORS_ALLOW_CREDENTIALS: "true"
+  RATE_LIMIT_PER_MINUTE: "240"
+  RATE_LIMIT_BURST: "120"
+  READ_TIMEOUT: 10s
+  WRITE_TIMEOUT: 15s
+  IDLE_TIMEOUT: 60s
+  SHUTDOWN_TIMEOUT: 15s

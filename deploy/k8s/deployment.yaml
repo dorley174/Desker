@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desker-backend
+  namespace: team-6-ns
+  labels:
+    app: desker-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: desker-backend
+  template:
+    metadata:
+      labels:
+        app: desker-backend
+    spec:
+      containers:
+        - name: desker-backend
+          image: registry.example.com/team-6/desker-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: desker-backend-config
+            - secretRef:
+                name: desker-backend-secret
+          volumeMounts:
+            - name: sqlite-data
+              mountPath: /app/data
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: sqlite-data
+          persistentVolumeClaim:
+            claimName: desker-sqlite-pvc
