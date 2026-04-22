@@ -46,11 +46,14 @@ const Register = () => {
       <div className="grid w-full gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <Card className="border-primary/15 bg-gradient-to-br from-card via-card to-muted/40 shadow-xl">
           <CardHeader>
-            <CardTitle className="text-3xl">Регистрация по инвайт-коду</CardTitle>
+            <CardTitle className="text-3xl">Регистрация аккаунта</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <p>
-              Роль назначается инвайт-кодом. Это соответствует бизнес-правилу проекта: сотрудник и администратор получают разный набор разделов и сценариев.
+              Здесь необходимо ввести свои данные для создания учётной записи. 
+            </p>
+            <p>
+              Роль назначается инвайт-кодом. В зависимости от кода, который вы используете при регистрации, вам будет присвоена роль сотрудника или администратора.
             </p>
             <div className="rounded-xl border bg-background p-4">
               <div className="font-medium text-foreground">Демо-коды</div>
@@ -71,22 +74,22 @@ const Register = () => {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Имя</Label>
-                  <Input id="firstName" required value={firstName} onChange={(event) => setFirstName(event.target.value)} />
+                  <Input id="firstName" placeholder="Иван" required value={firstName} onChange={(event) => setFirstName(event.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Фамилия</Label>
-                  <Input id="lastName" required value={lastName} onChange={(event) => setLastName(event.target.value)} />
+                  <Input id="lastName" placeholder="Иванов" required value={lastName} onChange={(event) => setLastName(event.target.value)} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+                <Input id="email" type="email" placeholder="name@company.com" required value={email} onChange={(event) => setEmail(event.target.value)} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="password">Пароль</Label>
-                <Input id="password" type="password" minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} />
+                <Input id="password" type="password" placeholder="**********" minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} />
               </div>
 
               <div className="space-y-2">

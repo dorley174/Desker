@@ -27,13 +27,13 @@ const features = [
   },
   {
     icon: HardDriveDownload,
-    title: "Backend API и общая БД",
-    description: "Приложение работает через Go backend API, а данные пользователей, мест и бронирований сохраняются в SQLite и доступны с разных устройств.",
+    title: "Комфортная экосистема",
+    description: "Приложение позволяет бронировать места в любое время дня и с любых устройств, обеспечивая гибкость и удобство для всех сотрудников офиса.",
   },
   {
     icon: Sparkles,
-    title: "Автоподбор места",
-    description: "Система рекомендует лучшее доступное место по выбранным фильтрам и текущей загрузке.",
+    title: "Дизайн",
+    description: "Современный и интуитивно понятный интерфейс, который делает процесс бронирования простым и приятным для всех пользователей.",
   },
 ];
 
@@ -66,7 +66,7 @@ const Landing = () => (
         </div>
       </div>
 
-      <Card className="border-primary/20 bg-gradient-to-br from-card to-muted/40 shadow-xl">
+      {/* <Card className="border-primary/20 bg-gradient-to-br from-card to-muted/40 shadow-xl">
         <CardHeader>
           <CardTitle>Быстрый старт</CardTitle>
         </CardHeader>
@@ -93,7 +93,7 @@ const Landing = () => (
             После входа сотрудник попадает на карту мест, а администратор — в operational dashboard с аналитикой загрузки.
           </p>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
 
     <div className="mt-14 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

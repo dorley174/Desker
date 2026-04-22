@@ -6,7 +6,7 @@ const Footer = () => (
       <span>© {new Date().getFullYear()} Desker - гибридный офис без хаоса в посадке. Все права защищены.</span>
       <div className="flex gap-4">
         <Link to="/contacts" className="transition hover:text-foreground">Контакты</Link>
-        <a href="https://desker.app" target="_blank" rel="noreferrer" className="transition hover:text-foreground">desker.app</a>
+        <a href="https://desker.app" target="_blank" rel="noreferrer" className="transition hover:text-foreground">Desker</a>
       </div>
     </div>
   </footer>

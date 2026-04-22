@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const contacts = [
-  { name: "Имя Фамилия", role: "Роль в проекте", handle: "@username" },
-  { name: "Имя Фамилия", role: "Роль в проекте", handle: "@username" },
-  { name: "Имя Фамилия", role: "Роль в проекте", handle: "@username" },
+  { name: "Данил Валиев", role: "DevOps инженер", handle: "@dorley" },
+  { name: "Валерия Колесникова", role: "Frontend-разработчик", handle: "@codekd" },
+  { name: "Олеся Новосёлова", role: "Backend-разработчик", handle: "@wkwthigo" },
+  { name: "Елизавета Загурских", role: "Аналитик", handle: "@doiwannaknoww8" },
 ];
 
 const Contacts = () => (
@@ -11,7 +12,10 @@ const Contacts = () => (
     <div className="mb-8">
       <h1 className="text-3xl font-bold tracking-tight">Контакты команды</h1>
       <p className="mt-2 text-muted-foreground">
-        Здесь можно указать состав команды проекта, роли участников и удобный способ связи.
+        Приветствуем вас на странице контактов нашей команды!
+      </p>
+      <p className="mt-2 text-muted-foreground">
+        Здесь вы можете найти контакты команды разработчиков для связи по любому поводу!
       </p>
     </div>
 
@@ -24,7 +28,7 @@ const Contacts = () => (
           </CardHeader>
           <CardContent className="p-6">
             <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-              Контакт через <span className="font-medium text-foreground">{person.handle}</span>
+              Связаться в Telegram: <span className="font-medium text-foreground">{person.handle}</span>
             </div>
           </CardContent>
         </Card>

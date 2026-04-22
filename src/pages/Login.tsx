@@ -95,11 +95,11 @@ const Login = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Пароль</Label>
-                  <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                  {/* <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                     Забыли пароль?
-                  </Link>
+                  </Link> */}
                 </div>
-                <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+                <Input id="password" type="password" placeholder="**********" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
               </div>
 
               <Button type="submit" className="w-full" disabled={submitting}>
