@@ -21,8 +21,9 @@ const AdminDashboard = () => {
     queryKey: ["admin-floor-metrics", dateString],
     queryFn: async () => {
       const floors = await api.floors();
+      const normalizedFloors = Array.isArray(floors) ? floors : [];
       return Promise.all(
-        floors.map(async (floor) => ({
+        normalizedFloors.map(async (floor) => ({
           floor,
           seats: await api.seats({ floor, date: dateString, status: "all" }),
         })),

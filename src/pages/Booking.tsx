@@ -72,9 +72,9 @@ const Booking = () => {
       }),
   });
 
-  const seats = useMemo(() => seatsQuery.data ?? [], [seatsQuery.data]);
-  const tags = useMemo(() => tagsQuery.data ?? [], [tagsQuery.data]);
-  const floors = useMemo(() => floorsQuery.data ?? [1, 2, 3, 4, 5, 6], [floorsQuery.data]);
+  const seats = useMemo(() => Array.isArray(seatsQuery.data) ? seatsQuery.data : [], [seatsQuery.data]);
+  const tags = useMemo(() => Array.isArray(tagsQuery.data) ? tagsQuery.data : [], [tagsQuery.data]);
+  const floors = useMemo(() => Array.isArray(floorsQuery.data) && floorsQuery.data.length > 0 ? floorsQuery.data : [1, 2, 3, 4, 5, 6], [floorsQuery.data]);
   const selectedTagsKey = selectedTags.join("|");
 
   const selectedSeat = useMemo(
@@ -96,6 +96,12 @@ const Booking = () => {
   useEffect(() => {
     setSelectedHours([]);
   }, [selectedSeatId, dateString]);
+
+  useEffect(() => {
+    if (!floors.includes(floor)) {
+      setFloor(floors[0] ?? 1);
+    }
+  }, [floor, floors]);
 
   const filteredSeats = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -340,7 +346,7 @@ const Booking = () => {
                   <Separator />
                   {slotsQuery.isLoading ? (
                     <div className="text-sm text-muted-foreground">Загружаем свободные часы...</div>
-                  ) : slotsQuery.data ? (
+                  ) : Array.isArray(slotsQuery.data) ? (
                     <div className="space-y-4">
                       <div><div className="mb-2 flex items-center gap-2 text-sm font-medium"><Clock3 className="h-4 w-4" /> Часы на {format(date, "d MMMM", { locale: ru })}</div><div className="grid grid-cols-3 gap-2">{slotsQuery.data.map((slot) => (<button key={slot.hour} disabled={slot.status !== "free"} onClick={() => toggleSlot(slot)} className={cn("rounded-lg border px-2 py-2 text-sm font-medium transition", slotTone[slot.status], selectedHours.includes(slot.hour) && slot.status === "free" && "ring-2 ring-primary ring-offset-1")}>{slot.hour}:00</button>))}</div></div>
                       <div className="rounded-xl border bg-muted/20 p-4 text-sm"><div className="font-medium">Выбранный интервал</div><div className="mt-1 text-muted-foreground">{selectionSummary(selectedHours)}</div>{selectedSegments.length > 1 ? <div className="mt-2 text-xs text-amber-700">Будет создано несколько интервалов: система разобьёт выбор на {selectedSegments.length} отдельных бронирования.</div> : null}</div>
