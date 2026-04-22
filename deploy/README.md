@@ -1,28 +1,62 @@
 # Desker deployment notes
 
-Этот каталог подготовлен под реальный деплой backend в ваш Kubernetes-кластер (`team-6-ns`) с SQLite на PVC.
+Этот каталог подготовлен под требования преподавателя: **path-based routing через IngressClass `public`**.
 
-## Почему backend разворачивается в 1 реплику
+## Что получается после деплоя
 
-Проект использует SQLite-файл на `PersistentVolumeClaim`. Для такого сценария безопаснее держать **одну реплику** backend и стратегию обновления **Recreate**, чтобы не получить конкурентную запись в один и тот же файл БД.
+- frontend: `/team-6/`
+- backend API: `/team-6-api/`
+- frontend использует API по относительному пути `/team-6-api/api/v1`
 
-## Что уже адаптировано
+Это снимает необходимость публиковать backend на отдельном домене.
 
-- backend работает с `DATABASE_DRIVER=sqlite`
-- файл БД хранится в `/app/data/desker.db`
-- `PVC` монтируется в `/app/data`
-- Deployment использует `strategy: Recreate`
-- контейнер запускается non-root
-- добавлены `startupProbe`, `readinessProbe`, `livenessProbe`
-- ingress настроен под префикс `/team-6-api`
+## Важно про внешний адрес ingress
 
-## Локальная сборка docker image
+Сам `kubectl get ingress` внутри этого кластера может показывать `127.0.0.1`. Это **не пользовательский URL**.
+Для реального доступа нужен **общий внешний host/IP ingress-controller**, который должен дать преподаватель или администратор кластера.
 
-```bash
-docker build -t desker-backend:local ./backend
+Итоговый URL сайта будет таким:
+
+```text
+http://<INGRESS_HOST_OR_IP>/team-6/
 ```
 
-## Пример ручного создания secret без файла
+А API фронт будет вызывать так:
+
+```text
+http://<INGRESS_HOST_OR_IP>/team-6-api/api/v1
+```
+
+Если хотите использовать собственный домен, его надо направить на внешний IP ingress-controller. Этот IP тоже должен быть известен со стороны инфраструктуры.
+
+## Почему backend в 1 реплике
+
+Проект использует SQLite-файл на `PersistentVolume`. Для такого сценария безопаснее держать **одну реплику** backend и стратегию обновления **Recreate**.
+
+## Образы
+
+Рекомендуемые имена образов:
+
+- `dorley174/desker-backend:latest`
+- `dorley174/desker-frontend:latest`
+
+## Сборка и push backend
+
+```bash
+docker build -t dorley174/desker-backend:latest ./backend
+docker push dorley174/desker-backend:latest
+```
+
+## Сборка и push frontend
+
+Frontend должен собираться с базовым путём `/team-6/`.
+
+```bash
+docker build --build-arg VITE_APP_BASE_PATH=/team-6/ -t dorley174/desker-frontend:latest -f Dockerfile.frontend .
+docker push dorley174/desker-frontend:latest
+```
+
+## Secret backend
 
 ```bash
 kubectl -n team-6-ns create secret generic desker-backend-secret   --from-literal=JWT_SECRET='replace-me'   --from-literal=SMTP_HOST=''   --from-literal=SMTP_PORT='587'   --from-literal=SMTP_USERNAME=''   --from-literal=SMTP_PASSWORD=''   --from-literal=SMTP_FROM='no-reply@desker.local'   --dry-run=client -o yaml | kubectl apply -f -
@@ -33,44 +67,37 @@ kubectl -n team-6-ns create secret generic desker-backend-secret   --from-litera
 ```bash
 export KUBECONFIG=./kubeconfig-team-6.yaml
 kubectl apply -f deploy/k8s/namespace.yaml
-kubectl apply -f deploy/k8s/configmap.yaml
+kubectl apply -f deploy/k8s/pv.yaml
 kubectl apply -f deploy/k8s/pvc.yaml
+kubectl apply -f deploy/k8s/configmap.yaml
+kubectl apply -f deploy/k8s/frontend-configmap.yaml
 kubectl apply -f deploy/k8s/deployment.yaml
 kubectl apply -f deploy/k8s/service.yaml
+kubectl apply -f deploy/k8s/frontend-deployment.yaml
+kubectl apply -f deploy/k8s/frontend-service.yaml
 kubectl apply -f deploy/k8s/ingress.yaml
-kubectl -n team-6-ns get all
-kubectl -n team-6-ns get pvc
-kubectl -n team-6-ns get ingress
 ```
 
-## Важные проверки после деплоя
+## Проверки после деплоя
 
 ```bash
 kubectl -n team-6-ns rollout status deployment/desker-backend
+kubectl -n team-6-ns rollout status deployment/desker-frontend
+kubectl -n team-6-ns get pods,svc,ingress
 kubectl -n team-6-ns logs deployment/desker-backend --tail=200
-kubectl -n team-6-ns describe pvc desker-sqlite-pvc
 ```
 
-## Пример внешнего URL для frontend
+## Что спрашивать у преподавателя
 
-Ingress переписывает путь `/team-6-api/...` внутрь backend. Поэтому frontend должен использовать API вида:
+Если сайт снаружи не открывается, нужно спросить **не kubeconfig и не IP API-сервера Kubernetes**, а именно:
 
-```bash
-VITE_API_URL=https://<INGRESS_HOST_OR_IP>/team-6-api/api/v1
-```
+- какой внешний host/IP соответствует `IngressClass=public`
+- по какому адресу доступен ingress с path-based routing
 
-## Helm
+Формулировка:
 
-```bash
-helm upgrade --install desker-backend ./deploy/helm/desker-backend   --namespace team-6-ns   --create-namespace   --set image.repository=registry.example.com/team-6/desker-backend   --set image.tag=latest   --set app.allowedOrigins='https://your-frontend-domain.example'   --set app.jwtSecret='replace-me'
-```
+> Подскажите, пожалуйста, внешний host/IP для IngressClass `public`, чтобы открыть маршруты `/team-6/` и `/team-6-api/` снаружи.
 
-## GitLab CI idea
+## Fallback: NodePort
 
-Pipeline уже есть в `.gitlab-ci.yml`. Для него обычно нужны переменные:
-
-- `CI_REGISTRY_USER`
-- `CI_REGISTRY_PASSWORD`
-- `KUBECONFIG_CONTENT`
-- `JWT_SECRET`
-- `ALLOWED_ORIGINS`
+Если преподаватель временно разрешит, можно использовать `NodePort`, но это нецелевой путь по сравнению с ingress.

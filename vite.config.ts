@@ -3,9 +3,11 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 const isPages = process.env.GITHUB_ACTIONS === "true";
+const configuredBase = process.env.VITE_APP_BASE_PATH;
+const basePath = configuredBase || (isPages ? "/Desker/" : "/");
 
 export default defineConfig({
-  base: isPages ? "/Desker/" : "/",
+  base: basePath,
   server: {
     host: "::",
     port: 5173,

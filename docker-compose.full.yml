@@ -10,7 +10,7 @@ services:
       DATABASE_DRIVER: sqlite
       DATABASE_URL: /app/data/desker.db
       MIGRATIONS_DIR: /app/migrations
-      ALLOWED_ORIGINS: http://localhost:3000
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
     volumes:
       - desker_sqlite_data:/app/data
     ports:
@@ -20,6 +20,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_APP_BASE_PATH: /
     container_name: desker-frontend
     environment:
       API_BASE_URL: http://localhost:8080/api/v1

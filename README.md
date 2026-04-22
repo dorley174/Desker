@@ -19,22 +19,26 @@
 ### Frontend
 
 - работа с реальным API
+- безопасная обработка нестабильных ответов API
 - runtime-конфиг для `API_BASE_URL`
+- поддержка развёртывания в подпути `/team-6/`
 - профиль показывает активные бронирования
-- текстовые блоки приведены в соответствие с серверным режимом, а не mock/localStorage
+- добавлен `ErrorBoundary`, чтобы UI не падал в белый экран без сообщения
 
 ### DevOps / Deploy
 
-- Dockerfile для frontend
+- Dockerfile для frontend и backend
 - `docker-compose.full.yml` для локального full-stack запуска
-- k8s manifests для backend + PVC + ingress
-- Helm chart
+- k8s manifests для backend + frontend + PVC + ingress
+- path-based ingress routing по требованиям преподавателя:
+  - frontend: `/team-6/`
+  - backend: `/team-6-api/`
+- Helm chart для backend
 - пример `.gitlab-ci.yml`
-- инструкции по Prometheus + Grafana
 
-## Быстрый старт
+## Быстрый старт локально
 
-### 1. Backend
+### Backend
 
 ```bash
 cd backend
@@ -42,7 +46,7 @@ go mod tidy
 go run ./cmd/server
 ```
 
-### 2. Frontend
+### Frontend
 
 ```bash
 npm install
@@ -51,21 +55,42 @@ npm run dev
 
 По умолчанию frontend ждёт backend на `http://localhost:8080/api/v1`.
 
-### 3. Full stack через Docker
+### Full stack через Docker
 
 ```bash
 docker compose -f docker-compose.full.yml up --build
 ```
 
-## Мониторинг
+## Деплой в Kubernetes по требованиям преподавателя
+
+Сайт публикуется через **path-based ingress routing**, а не через отдельный домен на каждый сервис.
+
+После деплоя маршруты должны быть такими:
+
+- frontend: `http://<INGRESS_HOST_OR_IP>/team-6/`
+- backend API: `http://<INGRESS_HOST_OR_IP>/team-6-api/api/v1`
+
+### Сборка образов
 
 ```bash
-cd backend
-docker compose -f monitoring/docker-compose.yml up -d
+docker build -t dorley174/desker-backend:latest ./backend
+docker push dorley174/desker-backend:latest
+
+docker build --build-arg VITE_APP_BASE_PATH=/team-6/ -t dorley174/desker-frontend:latest -f Dockerfile.frontend .
+docker push dorley174/desker-frontend:latest
 ```
 
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3001`
+### Манифесты
+
+Подробные команды лежат в `deploy/README.md`.
+
+## Что важно про ingress host
+
+`kubeconfig` даёт доступ к Kubernetes API, но **не сообщает пользовательский URL сайта**.
+Если `kubectl get ingress` показывает `127.0.0.1`, это не внешний адрес для пользователей.
+
+Нужно запросить у преподавателя или админа кластера **внешний host/IP для `IngressClass=public`**.
+Именно его надо использовать как базовый адрес для сайта.
 
 ## Демо-данные
 
@@ -73,22 +98,3 @@ docker compose -f monitoring/docker-compose.yml up -d
 - `user@desker.io` / `user123`
 - `ADMIN2026` — админ
 - `JOIN2026` — сотрудник
-
-## Примечание
-
-В этой среде у меня не было доступа к загрузке новых Go/npm зависимостей из сети, поэтому я подготовил код, конфигурацию и деплой-артефакты, но не смог выполнить полноценную сборку с обновлением lock-файлов через интернет. На твоей машине после распаковки архива сделай `go mod tidy` и обычную установку frontend-зависимостей.
-
-
-## Kubernetes cluster deploy
-
-Backend адаптирован под развёртывание в Kubernetes-кластер с PVC для SQLite.
-
-Ключевые свойства:
-
-- одна реплика backend
-- стратегия обновления `Recreate`
-- PVC `desker-sqlite-pvc`
-- ingress path `/team-6-api(/|$)(.*)` с rewrite на backend
-- frontend должен использовать `VITE_API_URL=https://<INGRESS_HOST_OR_IP>/team-6-api/api/v1`
-
-Подробные команды лежат в `deploy/README.md`.

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desker-frontend
+  namespace: team-6-ns
+  labels:
+    app: desker-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: desker-frontend
+  template:
+    metadata:
+      labels:
+        app: desker-frontend
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: desker-frontend
+          image: dorley174/desker-frontend:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: desker-frontend-config
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"

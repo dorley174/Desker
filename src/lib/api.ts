@@ -9,7 +9,11 @@ declare global {
 }
 
 const runtimeApiBase = typeof window !== "undefined" ? window.__APP_CONFIG__?.API_BASE_URL : undefined;
-const API_BASE = runtimeApiBase || import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1";
+const defaultApiBase =
+  typeof window !== "undefined" && window.location.port === "5173"
+    ? "http://localhost:8080/api/v1"
+    : "/team-6-api/api/v1";
+const API_BASE = runtimeApiBase || import.meta.env.VITE_API_URL || defaultApiBase;
 const TOKEN_KEY = "desker_token";
 
 export interface ApiErrorPayload {

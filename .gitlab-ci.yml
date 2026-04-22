@@ -3,7 +3,8 @@ stages:
   - deploy
 
 variables:
-  IMAGE_NAME: $CI_REGISTRY_IMAGE/desker-backend
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/desker-backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/desker-frontend
   K8S_NAMESPACE: team-6-ns
   HELM_RELEASE: desker-backend
 
@@ -14,8 +15,20 @@ build-backend:
     - docker:27-dind
   script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker build -t "$IMAGE_NAME:$CI_COMMIT_SHA" ./backend
-    - docker push "$IMAGE_NAME:$CI_COMMIT_SHA"
+    - docker build -t "$BACKEND_IMAGE:$CI_COMMIT_SHA" ./backend
+    - docker push "$BACKEND_IMAGE:$CI_COMMIT_SHA"
+  only:
+    - main
+
+build-frontend:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build --build-arg VITE_APP_BASE_PATH=/team-6/ -t "$FRONTEND_IMAGE:$CI_COMMIT_SHA" -f Dockerfile.frontend .
+    - docker push "$FRONTEND_IMAGE:$CI_COMMIT_SHA"
   only:
     - main
 
@@ -26,6 +39,6 @@ deploy-backend:
     - mkdir -p ~/.kube
     - printf '%s' "$KUBECONFIG_CONTENT" > ~/.kube/config
   script:
-    - helm upgrade --install "$HELM_RELEASE" ./deploy/helm/desker-backend --namespace "$K8S_NAMESPACE" --create-namespace --set image.repository="$IMAGE_NAME" --set image.tag="$CI_COMMIT_SHA" --set app.jwtSecret="$JWT_SECRET" --set app.allowedOrigins="$ALLOWED_ORIGINS"
+    - helm upgrade --install "$HELM_RELEASE" ./deploy/helm/desker-backend --namespace "$K8S_NAMESPACE" --create-namespace --set image.repository="$BACKEND_IMAGE" --set image.tag="$CI_COMMIT_SHA" --set app.jwtSecret="$JWT_SECRET" --set app.allowedOrigins="$ALLOWED_ORIGINS"
   only:
     - main
