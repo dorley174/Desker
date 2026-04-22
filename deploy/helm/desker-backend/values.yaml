@@ -2,11 +2,17 @@ nameOverride: ""
 fullnameOverride: ""
 
 replicaCount: 1
+terminationGracePeriodSeconds: 30
+
+strategy:
+  type: Recreate
 
 image:
   repository: registry.example.com/team-6/desker-backend
   pullPolicy: IfNotPresent
   tag: latest
+
+imagePullSecrets: []
 
 service:
   type: ClusterIP
@@ -29,19 +35,64 @@ app:
   shutdownTimeout: 15s
   jwtSecret: replace-me
 
+smtp:
+  host: ""
+  port: "587"
+  username: ""
+  password: ""
+  from: no-reply@desker.local
+
 persistence:
   enabled: true
   accessMode: ReadWriteOnce
   size: 1Gi
   mountPath: /app/data
 
+podSecurityContext:
+  fsGroup: 10001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
 ingress:
   enabled: true
   className: public
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
-  path: /team-6-api/(.*)
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  path: /team-6-api(/|$)(.*)
   pathType: ImplementationSpecific
+
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  failureThreshold: 30
+  periodSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 3
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 15
+  timeoutSeconds: 2
+  failureThreshold: 3
 
 resources:
   requests:

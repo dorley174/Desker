@@ -31,5 +31,3 @@ dist-ssr
 node_modules
 dist
 .env
-kubeconfig*.yaml
-*.kubeconfig

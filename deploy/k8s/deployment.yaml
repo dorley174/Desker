@@ -7,6 +7,8 @@ metadata:
     app: desker-backend
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: desker-backend
@@ -15,12 +17,38 @@ spec:
       labels:
         app: desker-backend
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: "Always"
+      initContainers:
+        - name: fix-permissions
+          image: alpine:3.22
+          command:
+            - sh
+            - -c
+            - chown -R 10001:10001 /app/data && chmod -R 775 /app/data
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "50m"
+              memory: "64Mi"
+          volumeMounts:
+            - name: sqlite-data
+              mountPath: /app/data
       containers:
         - name: desker-backend
-          image: registry.example.com/team-6/desker-backend:latest
+          image: dorley174/desker-backend:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
           envFrom:
             - configMapRef:
                 name: desker-backend-config
@@ -29,18 +57,36 @@ spec:
           volumeMounts:
             - name: sqlite-data
               mountPath: /app/data
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
-            initialDelaySeconds: 5
+              port: http
+            initialDelaySeconds: 3
             periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: http
             initialDelaySeconds: 15
             periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: "100m"

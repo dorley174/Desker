@@ -77,3 +77,18 @@ docker compose -f monitoring/docker-compose.yml up -d
 ## Примечание
 
 В этой среде у меня не было доступа к загрузке новых Go/npm зависимостей из сети, поэтому я подготовил код, конфигурацию и деплой-артефакты, но не смог выполнить полноценную сборку с обновлением lock-файлов через интернет. На твоей машине после распаковки архива сделай `go mod tidy` и обычную установку frontend-зависимостей.
+
+
+## Kubernetes cluster deploy
+
+Backend адаптирован под развёртывание в Kubernetes-кластер с PVC для SQLite.
+
+Ключевые свойства:
+
+- одна реплика backend
+- стратегия обновления `Recreate`
+- PVC `desker-sqlite-pvc`
+- ingress path `/team-6-api(/|$)(.*)` с rewrite на backend
+- frontend должен использовать `VITE_API_URL=https://<INGRESS_HOST_OR_IP>/team-6-api/api/v1`
+
+Подробные команды лежат в `deploy/README.md`.

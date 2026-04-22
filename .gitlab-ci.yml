@@ -26,6 +26,6 @@ deploy-backend:
     - mkdir -p ~/.kube
     - printf '%s' "$KUBECONFIG_CONTENT" > ~/.kube/config
   script:
-    - helm upgrade --install "$HELM_RELEASE" ./deploy/helm/desker-backend --namespace "$K8S_NAMESPACE" --create-namespace --set image.repository="$IMAGE_NAME" --set image.tag="$CI_COMMIT_SHA" --set app.jwtSecret="$JWT_SECRET"
+    - helm upgrade --install "$HELM_RELEASE" ./deploy/helm/desker-backend --namespace "$K8S_NAMESPACE" --create-namespace --set image.repository="$IMAGE_NAME" --set image.tag="$CI_COMMIT_SHA" --set app.jwtSecret="$JWT_SECRET" --set app.allowedOrigins="$ALLOWED_ORIGINS"
   only:
     - main

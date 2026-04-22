@@ -20,6 +20,12 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 const Header = () => {
   const { user, logout, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const firstInitial = (user?.firstName?.[0] || user?.email?.[0] || "U").toUpperCase();
+  const lastInitial = (user?.lastName?.[0] || "").toUpperCase();
+  const displayName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    user?.email ||
+    "Пользователь";
 
   const handleLogout = () => {
     logout();
@@ -58,12 +64,11 @@ const Header = () => {
                 <button className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm shadow-sm transition hover:bg-accent">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                      {(user.firstName?.[0] || user.email?.[0] || "U").toUpperCase()}
-                      {(user.lastName?.[0] || "").toUpperCase()}
+                      {firstInitial}{lastInitial}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden text-left sm:block">
-                    <div className="font-medium leading-tight">{user.firstName} {user.lastName}</div>
+                    <div className="font-medium leading-tight">{displayName}</div>
                     <div className="text-xs text-muted-foreground">{user.email}</div>
                   </div>
                 </button>
