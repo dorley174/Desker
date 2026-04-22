@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarIcon, Clock3, MapPin, Sparkles, Wand2 } from "lucide-react";
+import { CalendarIcon, Clock3, MapPin } from "lucide-react";
 import { api } from "@/lib/api";
 import type { HourSlot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { buildHourSegments, buildRecurringDates, buildWalkInHours, describeBookingStatus, formatDateKey, isToday, normalizeSelectedHours, selectionSummary, statusPill } from "@/lib/booking-helpers";
-import { groupSeatsByZone, recommendationScore, seatStatusTone, seatSummary, seatTypeLabel, STATUS_LABELS } from "@/lib/seat-meta";
+import { groupSeatsByZone, seatStatusTone, seatSummary, seatTypeLabel, STATUS_LABELS } from "@/lib/seat-meta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -124,12 +124,6 @@ const Booking = () => {
       { total: 0, free: 0, occupied: 0, mine: 0, unavailable: 0 },
     );
   }, [seats]);
-
-  const recommendedSeat = useMemo(() => {
-    const candidates = filteredSeats.filter((seat) => seat.status === "free");
-    if (candidates.length === 0) return null;
-    return [...candidates].sort((a, b) => recommendationScore(a, selectedTags) - recommendationScore(b, selectedTags))[0];
-  }, [filteredSeats, selectedTags]);
 
   const activeBookings = useMemo(() => {
     const items = historyQuery.data?.items ?? [];
@@ -297,7 +291,6 @@ const Booking = () => {
 
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => { setSelectedTags([]); setStatusFilter("all"); setQuery(""); }}>Сбросить</Button>
-              <Button className="flex-1" disabled={!recommendedSeat} onClick={() => setSelectedSeatId(recommendedSeat?.id ?? null)}><Sparkles className="mr-2 h-4 w-4" /> Автовыбор</Button>
             </div>
           </CardContent>
         </Card>
@@ -309,7 +302,6 @@ const Booking = () => {
                 <CardTitle>Карта мест</CardTitle>
                 <CardDescription>{seatsQuery.isLoading ? "Загрузка мест..." : `Найдено ${filteredSeats.length} мест по текущим условиям`}</CardDescription>
               </div>
-              {recommendedSeat ? <Button variant="outline" size="sm" onClick={() => setSelectedSeatId(recommendedSeat.id)}><Wand2 className="mr-2 h-4 w-4" /> Рекомендовать место {recommendedSeat.number}</Button> : null}
             </CardHeader>
             <CardContent className="space-y-5">
               {seatsQuery.error ? <Alert variant="destructive"><AlertDescription>{seatsQuery.error instanceof Error ? seatsQuery.error.message : "Не удалось загрузить места"}</AlertDescription></Alert> : null}
@@ -320,7 +312,7 @@ const Booking = () => {
                   <div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Зона {zone}</h3><p className="text-xs text-muted-foreground">{zoneSeats.length} мест</p></div><div className="flex gap-2 text-xs text-muted-foreground"><span>Свободно {zoneSeats.filter((seat) => seat.status === "free").length}</span><span>Занято {zoneSeats.filter((seat) => seat.status === "occupied").length}</span></div></div>
                   <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-10">
                     {zoneSeats.map((seat) => (
-                      <button key={seat.id} onClick={() => setSelectedSeatId(seat.id)} disabled={seat.status === "unavailable"} className={cn("rounded-xl border px-3 py-4 text-left text-sm shadow-sm transition", seatStatusTone(seat.status), selectedSeatId === seat.id && "ring-2 ring-primary ring-offset-2")}>
+                      <button key={seat.id} onClick={() => setSelectedSeatId(seat.id)} disabled={seat.status === "unavailable"} className={cn("flex flex-col items-center justify-center rounded-xl border px-3 py-4 text-center text-sm shadow-sm transition", seatStatusTone(seat.status), selectedSeatId === seat.id && "ring-2 ring-primary ring-offset-2")}>
                         <div className="text-base font-semibold">{seat.number}</div>
                         <div className="mt-1 text-[11px] opacity-80">{seatTypeLabel(seat)}</div>
                       </button>
@@ -355,7 +347,7 @@ const Booking = () => {
                     </div>
                   ) : <div className="text-sm text-muted-foreground">Выберите место, чтобы увидеть свободные слоты.</div>}
                 </div>
-              ) : <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">Выберите место на карте или используйте автоподбор, чтобы открыть карточку и слоты бронирования.</div>}
+              ) : <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground">Выберите место на карте, чтобы открыть карточку и слоты бронирования.</div>}
             </CardContent>
           </Card>
 

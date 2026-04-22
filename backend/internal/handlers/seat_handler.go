@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -73,6 +74,43 @@ func (h *SeatHandler) Slots(w http.ResponseWriter, r *http.Request) {
 	}
 	h.observe("slots", "success")
 	utils.WriteJSON(w, http.StatusOK, slots)
+}
+
+type updateSeatAvailabilityRequest struct {
+	Available *bool `json:"available"`
+}
+
+func (h *SeatHandler) UpdateAvailability(w http.ResponseWriter, r *http.Request) {
+	if middleware.RoleFromContext(r.Context()) != "admin" {
+		h.observe("update_availability", "forbidden")
+		utils.WriteError(w, http.StatusForbidden, "admin access required")
+		return
+	}
+
+	seatID := chi.URLParam(r, "seatID")
+	var payload updateSeatAvailabilityRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		h.observe("update_availability", "error")
+		utils.WriteError(w, http.StatusBadRequest, "invalid JSON payload")
+		return
+	}
+	if payload.Available == nil {
+		h.observe("update_availability", "error")
+		utils.WriteError(w, http.StatusBadRequest, "field 'available' is required")
+		return
+	}
+
+	if err := h.seats.SetSeatAvailability(r.Context(), seatID, *payload.Available); err != nil {
+		h.observe("update_availability", "error")
+		status := http.StatusBadRequest
+		if err == services.ErrNotFound {
+			status = http.StatusNotFound
+		}
+		utils.WriteError(w, status, err.Error())
+		return
+	}
+	h.observe("update_availability", "success")
+	utils.WriteJSON(w, http.StatusOK, map[string]any{"status": "ok", "seatId": seatID, "available": *payload.Available})
 }
 
 func parseCSV(v string) []string {

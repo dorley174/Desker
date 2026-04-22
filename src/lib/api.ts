@@ -245,4 +245,10 @@ export const api = {
   async cancelBooking(bookingId: string) {
     return request<{ status: string }>(`/bookings/${bookingId}`, { method: "DELETE" });
   },
+  async setSeatAvailability(seatId: string, available: boolean) {
+    return request<{ status: string }>(`/admin/seats/${seatId}/availability`, {
+      method: "PATCH",
+      body: JSON.stringify({ available }),
+    });
+  },
 };

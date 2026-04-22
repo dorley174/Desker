@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desker-grafana
+  namespace: team-6-ns
+  labels:
+    app: desker-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: desker-grafana
+  template:
+    metadata:
+      labels:
+        app: desker-grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.2.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: desker-monitoring-secret
+                  key: GRAFANA_ADMIN_USER
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: desker-monitoring-secret
+                  key: GRAFANA_ADMIN_PASSWORD
+            - name: GF_SERVER_ROOT_URL
+              value: '%(protocol)s://%(domain)s/team-6-grafana/'
+            - name: GF_SERVER_SERVE_FROM_SUB_PATH
+              value: 'true'
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: 'false'
+          ports:
+            - name: http
+              containerPort: 3000
+          volumeMounts:
+            - name: datasource
+              mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
+              subPath: prometheus.yml
+            - name: dashboards-provider
+              mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml
+              subPath: dashboards.yml
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards/desker-observability.json
+              subPath: desker-observability.json
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+      volumes:
+        - name: datasource
+          configMap:
+            name: desker-grafana-datasource
+        - name: dashboards-provider
+          configMap:
+            name: desker-grafana-dashboards-provider
+        - name: dashboards
+          configMap:
+            name: desker-grafana-dashboard
+        - name: grafana-storage
+          emptyDir: {}

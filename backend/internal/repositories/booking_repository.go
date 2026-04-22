@@ -47,8 +47,24 @@ func (r *bookingRepository) Create(ctx context.Context, booking *models.Booking)
 		_ = tx.Rollback()
 	}()
 
+	const seatAvailableQ = `
+	SELECT is_available
+	FROM seats
+	WHERE id = ?
+`
+	var available bool
+	if err := tx.GetContext(ctx, &available, rebind(r.db, seatAvailableQ), booking.SeatID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		return fmt.Errorf("check seat availability: %w", err)
+	}
+	if !available {
+		return ErrConflict
+	}
+
 	const overlapQ = `
-		SELECT EXISTS(
+	SELECT EXISTS(
 			SELECT 1
 			FROM bookings
 			WHERE seat_id = ?

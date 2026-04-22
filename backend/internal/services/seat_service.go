@@ -67,3 +67,16 @@ func (s *SeatService) SeatSlots(ctx context.Context, seatID, date, userID string
 	}
 	return s.seats.GetSeatSlots(ctx, seatID, date, userID)
 }
+
+func (s *SeatService) SetSeatAvailability(ctx context.Context, seatID string, available bool) error {
+	if strings.TrimSpace(seatID) == "" {
+		return fmt.Errorf("%w: seatID is required", ErrInvalidInput)
+	}
+	if err := s.seats.SetAvailability(ctx, seatID, available); err != nil {
+		if err == repositories.ErrNotFound {
+			return ErrNotFound
+		}
+		return err
+	}
+	return nil
+}

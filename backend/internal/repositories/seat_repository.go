@@ -24,6 +24,7 @@ type SeatFilter struct {
 type SeatRepository interface {
 	ListSeats(ctx context.Context, filter SeatFilter) ([]models.Seat, error)
 	GetSeatSlots(ctx context.Context, seatID, date, userID string) ([]models.HourSlot, error)
+	SetAvailability(ctx context.Context, seatID string, available bool) error
 }
 
 type seatRepository struct {
@@ -159,4 +160,25 @@ func (r *seatRepository) GetSeatSlots(ctx context.Context, seatID, date, userID 
 	}
 
 	return slots, nil
+}
+
+func (r *seatRepository) SetAvailability(ctx context.Context, seatID string, available bool) error {
+	const q = `
+		UPDATE seats
+		SET is_available = ?
+		WHERE id = ?
+	`
+	value := 0
+	if available {
+		value = 1
+	}
+	res, err := r.db.ExecContext(ctx, rebind(r.db, q), value, seatID)
+	if err != nil {
+		return fmt.Errorf("set seat availability: %w", err)
+	}
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return ErrNotFound
+	}
+	return nil
 }

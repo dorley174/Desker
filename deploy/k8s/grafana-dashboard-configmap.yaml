@@ -1,0 +1,286 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desker-grafana-dashboard
+  namespace: team-6-ns
+data:
+  desker-observability.json: |
+    {
+      "uid": "desker-observability",
+      "title": "Desker Observability",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "15s",
+      "timezone": "browser",
+      "editable": true,
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Backend UP",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max(up{job=~\"desker-api|desker-backend\"})"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "orientation": "auto",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Total HTTP Requests",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(desker_http_requests_total)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "orientation": "auto",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Active Bookings Ops",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(desker_bookings_total)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "orientation": "auto",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Seat Queries",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(desker_seat_queries_total)"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "orientation": "auto",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "HTTP Throughput by Route",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(desker_http_requests_total[5m])) by (route)",
+              "legendFormat": "{{route}}"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "HTTP p95 Latency",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum(rate(desker_http_request_duration_seconds_bucket[5m])) by (le, route))",
+              "legendFormat": "p95 {{route}}"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Auth / Booking / Seat Rates",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(desker_auth_operations_total[5m])) by (operation)",
+              "legendFormat": "auth {{operation}}"
+            },
+            {
+              "refId": "B",
+              "expr": "sum(rate(desker_bookings_total[5m])) by (operation)",
+              "legendFormat": "booking {{operation}}"
+            },
+            {
+              "refId": "C",
+              "expr": "sum(rate(desker_seat_queries_total[5m])) by (operation)",
+              "legendFormat": "seat {{operation}}"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "DB Pool Stats",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "desker_db_open_connections",
+              "legendFormat": "open"
+            },
+            {
+              "refId": "B",
+              "expr": "desker_db_in_use_connections",
+              "legendFormat": "in_use"
+            },
+            {
+              "refId": "C",
+              "expr": "desker_db_idle_connections",
+              "legendFormat": "idle"
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Error / Protection Signals",
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 20
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(desker_http_requests_total{status=~\"5..\"}[5m]))",
+              "legendFormat": "5xx req/s"
+            },
+            {
+              "refId": "B",
+              "expr": "sum(rate(desker_rate_limit_exceeded_total[5m]))",
+              "legendFormat": "rate-limited req/s"
+            },
+            {
+              "refId": "C",
+              "expr": "sum(rate(desker_http_panics_recovered_total[5m]))",
+              "legendFormat": "panics/s"
+            }
+          ]
+        }
+      ]
+    }

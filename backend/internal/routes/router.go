@@ -58,6 +58,7 @@ func NewRouter(deps Dependencies) http.Handler {
 			r.Get("/equipment-tags", deps.SeatHandler.EquipmentTags)
 			r.Get("/seats", deps.SeatHandler.List)
 			r.Get("/seats/{seatID}/slots", deps.SeatHandler.Slots)
+			r.Patch("/admin/seats/{seatID}/availability", deps.SeatHandler.UpdateAvailability)
 
 			r.Post("/bookings", deps.BookingHandler.Create)
 			r.Delete("/bookings/{bookingID}", deps.BookingHandler.Cancel)

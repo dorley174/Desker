@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desker-prometheus-config
+  namespace: team-6-ns
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets:
+              - localhost:9090
+
+      - job_name: desker-backend
+        metrics_path: /metrics
+        static_configs:
+          - targets:
+              - desker-backend:80

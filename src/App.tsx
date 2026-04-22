@@ -18,6 +18,7 @@ import HistoryPage from "@/pages/HistoryPage";
 import Profile from "@/pages/Profile";
 import Forbidden from "@/pages/Forbidden";
 import NotFound from "@/pages/NotFound";
+import Contacts from "@/pages/Contacts";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/forbidden" element={<Forbidden />} />
+                <Route path="/contacts" element={<Contacts />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
