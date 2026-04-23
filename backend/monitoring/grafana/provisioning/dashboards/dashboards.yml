@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: desker-dashboards
+    orgId: 1
+    folder: Desker
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

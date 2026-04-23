@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "desker-backend.fullname" . }}
+  labels:
+    app: {{ include "desker-backend.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+  selector:
+    matchLabels:
+      app: {{ include "desker-backend.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "desker-backend.name" . }}
+    spec:
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      securityContext:
+{{ toYaml .Values.podSecurityContext | indent 8 }}
+      containers:
+        - name: {{ include "desker-backend.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "desker-backend.fullname" . }}-config
+            - secretRef:
+                name: {{ include "desker-backend.fullname" . }}-secret
+          startupProbe:
+{{ toYaml .Values.startupProbe | indent 12 }}
+          readinessProbe:
+{{ toYaml .Values.readinessProbe | indent 12 }}
+          livenessProbe:
+{{ toYaml .Values.livenessProbe | indent 12 }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          securityContext:
+{{ toYaml .Values.securityContext | indent 12 }}
+{{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: sqlite-data
+              mountPath: {{ .Values.persistence.mountPath }}
+{{- end }}
+{{- if .Values.persistence.enabled }}
+      volumes:
+        - name: sqlite-data
+          persistentVolumeClaim:
+            claimName: {{ include "desker-backend.fullname" . }}-pvc
+{{- end }}

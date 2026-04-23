@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "desker-backend.fullname" . }}-config
+data:
+  APP_ENV: {{ .Values.app.env | quote }}
+  PORT: {{ .Values.app.port | quote }}
+  DATABASE_DRIVER: {{ .Values.app.databaseDriver | quote }}
+  DATABASE_URL: {{ .Values.app.databaseUrl | quote }}
+  MIGRATIONS_DIR: {{ .Values.app.migrationsDir | quote }}
+  ALLOWED_ORIGINS: {{ .Values.app.allowedOrigins | quote }}
+  CORS_ALLOW_CREDENTIALS: {{ .Values.app.corsAllowCredentials | quote }}
+  RATE_LIMIT_PER_MINUTE: {{ .Values.app.rateLimitPerMinute | quote }}
+  RATE_LIMIT_BURST: {{ .Values.app.rateLimitBurst | quote }}
+  READ_TIMEOUT: {{ .Values.app.readTimeout | quote }}
+  WRITE_TIMEOUT: {{ .Values.app.writeTimeout | quote }}
+  IDLE_TIMEOUT: {{ .Values.app.idleTimeout | quote }}
+  SHUTDOWN_TIMEOUT: {{ .Values.app.shutdownTimeout | quote }}

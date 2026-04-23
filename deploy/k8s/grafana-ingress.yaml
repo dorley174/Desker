@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: team-6-grafana
+  namespace: team-6-ns
+spec:
+  ingressClassName: public
+  rules:
+    - http:
+        paths:
+          - path: /team-6-grafana
+            pathType: Prefix
+            backend:
+              service:
+                name: desker-grafana
+                port:
+                  number: 3000

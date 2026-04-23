@@ -1,12 +1,16 @@
 import { useState } from "react";
-import { Seat, generateSlots, HourSlot } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
+import type { HourSlot, Seat } from "@/lib/types";
 
 interface Props {
   seat: Seat;
+  date: string;
+  slots: HourSlot[];
   onClose: () => void;
+  onBooked: () => void;
 }
 
 const slotColor: Record<HourSlot["status"], string> = {
@@ -15,33 +19,54 @@ const slotColor: Record<HourSlot["status"], string> = {
   mine: "bg-blue-100 border-blue-400 text-blue-800",
 };
 
-const SlotPicker = ({ seat, onClose }: Props) => {
-  const [slots] = useState(() => generateSlots(seat.id));
+const SlotPicker = ({ seat, date, slots, onClose, onBooked }: Props) => {
   const [selected, setSelected] = useState<number[]>([]);
 
   const toggleSlot = (slot: HourSlot) => {
     if (slot.status !== "free") return;
     setSelected((prev) =>
-      prev.includes(slot.hour) ? prev.filter((h) => h !== slot.hour) : [...prev, slot.hour]
+      prev.includes(slot.hour)
+        ? prev.filter((h) => h !== slot.hour)
+        : [...prev, slot.hour],
     );
   };
 
-  const handleBook = () => {
-    // TODO: replace with API call
-    toast.success(`Забронировано: место ${seat.number} (зона ${seat.zone}), ${selected.sort().map((h) => `${h}:00`).join(", ")}`);
-    onClose();
+  const handleBook = async () => {
+    try {
+      const hours = [...selected].sort((a, b) => a - b);
+      await api.createBooking({ seatId: seat.id, date, hours });
+      toast.success(
+        `Забронировано: место ${seat.number} (зона ${seat.zone}), ${hours.map((h) => `${h}:00`).join(", ")}`,
+      );
+      setSelected([]);
+      onBooked();
+      onClose();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Не удалось создать бронь",
+      );
+    }
   };
 
   return (
     <div className="rounded-xl border bg-card p-4 shadow-lg">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold">Место {seat.number} · Зона {seat.zone}</h3>
-        <Button variant="ghost" size="sm" onClick={onClose}>✕</Button>
+        <h3 className="font-semibold">
+          Место {seat.number} · Зона {seat.zone}
+        </h3>
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          ✕
+        </Button>
       </div>
       {seat.tags.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-1">
           {seat.tags.map((t) => (
-            <span key={t} className="rounded-full bg-secondary px-2 py-0.5 text-xs">{t}</span>
+            <span
+              key={t}
+              className="rounded-full bg-secondary px-2 py-0.5 text-xs"
+            >
+              {t}
+            </span>
           ))}
         </div>
       )}
@@ -54,7 +79,9 @@ const SlotPicker = ({ seat, onClose }: Props) => {
             className={cn(
               "rounded-md border px-2 py-1.5 text-xs font-medium transition",
               slotColor[slot.status],
-              selected.includes(slot.hour) && slot.status === "free" && "ring-2 ring-primary"
+              selected.includes(slot.hour) &&
+                slot.status === "free" &&
+                "ring-2 ring-primary",
             )}
           >
             {slot.hour}:00
@@ -62,10 +89,16 @@ const SlotPicker = ({ seat, onClose }: Props) => {
         ))}
       </div>
       <div className="mt-4 flex gap-2">
-        <Button onClick={handleBook} disabled={selected.length === 0} className="flex-1">
+        <Button
+          onClick={handleBook}
+          disabled={selected.length === 0}
+          className="flex-1"
+        >
           Забронировать ({selected.length})
         </Button>
-        <Button variant="outline" onClick={onClose}>Отмена</Button>
+        <Button variant="outline" onClick={onClose}>
+          Отмена
+        </Button>
       </div>
     </div>
   );

@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: team-6-desker
+  namespace: team-6-ns
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: public
+  rules:
+    - http:
+        paths:
+          - path: /team-6(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: desker-frontend
+                port:
+                  number: 80
+          - path: /team-6-api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: desker-backend
+                port:
+                  number: 80

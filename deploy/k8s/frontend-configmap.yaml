@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desker-frontend-config
+  namespace: team-6-ns
+data:
+  API_BASE_URL: /team-6-api/api/v1

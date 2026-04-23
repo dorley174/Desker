@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: desker-frontend
+  namespace: team-6-ns
+spec:
+  type: ClusterIP
+  selector:
+    app: desker-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
