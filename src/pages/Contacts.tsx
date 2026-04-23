@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 const contacts = [
   { name: "Данил Валиев", role: "DevOps инженер", handle: "@dorley" },
   { name: "Валерия Колесникова", role: "Frontend-разработчик", handle: "@codekd" },
-  { name: "Олеся Новосёлова", role: "Backend-разработчик", handle: "@wkwthigo" },
-  { name: "Елизавета Загурских", role: "Аналитик", handle: "@doiwannaknoww8" },
+  { name: "Олеся Новосёлова", role: "Backend-разработчик", handle: "@doiwannaknoww8" },
+  { name: "Елизавета Загурских", role: "Аналитик", handle: "@wkwthigo" },
 ];
 
 const Contacts = () => (
@@ -15,11 +15,11 @@ const Contacts = () => (
         Приветствуем вас на странице контактов нашей команды!
       </p>
       <p className="mt-2 text-muted-foreground">
-        Здесь вы можете найти контакты команды разработчиков для связи по любому поводу!
+        Здесь вы можете связаться с командой разработчиков по любому поводу!
       </p>
     </div>
 
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
       {contacts.map((person, index) => (
         <Card key={`${person.name}-${index}`} className="overflow-hidden">
           <CardHeader className="bg-muted/50">

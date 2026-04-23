@@ -55,13 +55,13 @@ const Register = () => {
             <p>
               Роль назначается инвайт-кодом. В зависимости от кода, который вы используете при регистрации, вам будет присвоена роль сотрудника или администратора.
             </p>
-            <div className="rounded-xl border bg-background p-4">
+            {/* <div className="rounded-xl border bg-background p-4">
               <div className="font-medium text-foreground">Демо-коды</div>
               <div className="mt-2 space-y-1 text-xs">
                 <div><code>JOIN2026</code> — сотрудник</div>
                 <div><code>ADMIN2026</code> — администратор</div>
               </div>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
 
